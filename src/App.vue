@@ -1,130 +1,86 @@
 <script setup lang="ts">
-  import { ref } from 'vue';
+  import { ref, onMounted } from 'vue';
   
-  const extensionIsInstalled = ref(<Boolean> false);
-
-  // send messages to content-script
-  const startCapturing = ():void => {
-    console.log('should start screen capture');
-
-    const message = { 
-      type: 'SS_UI_REQUEST'
-    };
-    sendMessage(message);
-  }
-
-const getCurrentTab = async() => {
-  const querryOptions = {
-    active: true,
-    lastFocusedWindow: true,
-    currentWindow: true
-  };
-
-  const [tab] = await chrome.tabs.query(querryOptions); 
+  import { Messages } from './messages';
+  import { sendMessageToBackground, sendMessageToContentScript } from './messenger';
   
-  return tab;
-}
 
-const stopCapturing = async () => {
-  console.log('should stop screen capture');
-
-  const message = { 
-      type: 'SS_UI_CANCEL'
-    };
-    sendMessage(message);
-}
-
-const sendMessage = async (message: Object):Promise<void> => {
-  if (!message) {
-    return;
-  }
-
-  try {
+  const capturing = ref(<boolean>false);
+  const startCapturing = async():Promise<void> => {
+    try {
       const tab = await getCurrentTab();
-      console.log(tab);
-      const tabId = <number> tab.id;
-        console.log(tabId)
-      chrome.tabs.sendMessage(tabId, message, () => {
-        console.log(`send message ${message} from tab: ${tabId}`);
-      });
+      const tabID = <number>tab.id;
+
+      const response = await sendMessageToContentScript(
+        tabID,
+        Messages.SS_UI_REQUEST,
+        {
+          message: 'Initialise Screen Capture'
+        }
+      );
+      console.log(`response: ${response}`);
+      capturing.value = true;
     }
-    catch(err) {
-      console.log(`Failed getting current tab: ${err}`);
+    catch (err) {
+      console.error(`error: ${err}`);
     }
-}
-
-window.addEventListener('message', (event: MessageEvent) =>{
-  if (event.origin !== window.location.origin) {
-    return;
   }
-
-  if (!event.data.type) {
-    return;
-  }
-
-  console.log(`Received a message: ${event.data.type}`);
-});
-
-  // listen to messages from content-script
-  // window.addEventListener('message', (event: MessageEvent) => {
-  //   // ignore every but our own message
-  //   if (event.origin !== window.location.origin) {
-  //     return;
-  //   }
-
-  //   if (!event.data.type) {
-  //     return;
-  //   }
-
-  //   if (event.data.type === 'SS_PING') {
-  //     extensionIsInstalled.value = true;
-  //   }
-
-  //   // if (event.data.type === 'SS_DIALOG_SUCCESS') {
-  //   //   startScreenStreamFrom(event.data.streamId);
-  //   // }
-
-  //   // if (event.data.type === 'SS_DIALOG_CANCEL') {
-  //   //   console.log('User cancelled');
-  //   // }
-  // });
-
-  // const handleSuccess = (stream : any) => {
-  //   // 
-  // }
-
-  // const handleError = (error : Error) => {
-  //   console.error(`getUserMedia() failed: ${error}`);
-  // }
   
-  // const startScreenStreamFrom = (streamId : number) => {
-  //   const constraints = <Object> {
-  //     audio: false,
-  //     video: {
-  //       mandatory: {
-  //         chromeMediaSource: 'desktop',
-  //         chromeMediaSourceId: streamId,
-  //         maxWidth: window.screen.width,
-  //         maxHeight: window.screen.height
-  //       }
-  //     }
-  //   };
+  const stopCapturing = async():Promise<void> => {
+    try {
+      const tab = await getCurrentTab();
+      const tabID = <number>tab.id;
 
-  //   navigator.mediaDevices.getUserMedia(constraints)
-  //     .then(handleSuccess)
-  //     .catch(handleError);
-  // }
+        const response = await sendMessageToContentScript(
+          tabID,
+          Messages.SS_UI_CANCEL,
+          {
+            message: 'Stop Screen Capture'
+          }
+        );
+        console.log(`response: ${response}`);
+        capturing.value = false;
+    }
+    catch (err) {
+      console.error(`error: ${err}`);
+    }
+  }
 
+  const getCurrentTab = async() => {
+    const querryOptions = {
+      active: true,
+      lastFocusedWindow: true,
+      currentWindow: true
+    };
+
+    const [tab] = await chrome.tabs.query(querryOptions); 
+    
+    return tab;
+  }
+
+  // // listen to messages from content-script
+  // const capturing = ref(<boolean>false);
+  // document.addEventListener('DOMContentLoaded', () => {
+  //   window.addEventListener('message', (event) => {
+  //     alert(`test`);
+  //   });
+  // });
 </script>
 
 <template>
   <div>
-    Share Screen
-    <button @click="startCapturing">
+    <button 
+      v-if="!capturing" 
+      @click="startCapturing">
       Start Capturing
     </button>
-    <button @click="stopCapturing">
+    <button 
+      v-else
+      @click="stopCapturing">
       Stop Capturing
     </button>
+    <p>
+      Capturing: {{ capturing }}
+    </p>
   </div>
 </template>
