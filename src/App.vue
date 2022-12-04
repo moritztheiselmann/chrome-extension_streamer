@@ -8,11 +8,7 @@
   const capturing = ref(<boolean>false);
   const startCapturing = async():Promise<void> => {
     try {
-      const tab = await getCurrentTab();
-      const tabID = <number>tab.id;
-
-      const response = await sendMessageToContentScript(
-        tabID,
+      const response = await sendMessageToBackground(
         Messages.SS_UI_REQUEST,
         {
           message: 'Initialise Screen Capture'
@@ -28,17 +24,13 @@
   
   const stopCapturing = async():Promise<void> => {
     try {
-      const tab = await getCurrentTab();
-      const tabID = <number>tab.id;
-
-        const response = await sendMessageToContentScript(
-          tabID,
+        const response = await sendMessageToBackground(
           Messages.SS_UI_CANCEL,
           {
             message: 'Stop Screen Capture'
           }
         );
-        console.log(`response: ${response}`);
+        alert(`response: ${response}`);
         capturing.value = false;
     }
     catch (err) {

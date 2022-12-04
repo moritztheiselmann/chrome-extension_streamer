@@ -23,33 +23,33 @@ const requestScreenCapture = async (sender: chrome.runtime.MessageSender, data: 
     return;
   }
 
-  const tab = sender.tab;
+  let tab;
+  try {
+    tab = await getCurrentTab();
+  }
+  catch(err) {
+    console.error(`error getting current tab: ${err}`);
+    return;
+  }
   if (!tab) {
     return;
   }
-  let response = <string>'';
+  
   console.log('Requesting Screen Capture. Waiting for User input.');
   mediaRequestID = chrome.desktopCapture.chooseDesktopMedia(dataSources, tab, (streamID) => {
-    // const tabID = tab?.id;
-    // if (!tabID) {
-    //   return;
-    // }
-
     if (streamID) {
-      // console.log('User has accepted Screen Capture.');
-      response = 'Screen Capture Was Accepted By User';
-      // sendMessageToContentScript(tabID, Messages.SS_DIALOG_SUCCESS, { message: 'Screen Capture Was Accepted By User' });
+      console.log('user agreed');
+      return { 
+        message:  'Screen Capture Was Declined By User'
+      };
     }
     else {
-      // console.log('User has declined Screen Capture.');
-      response = 'Screen Capture Was Declined By User';
-      // sendMessageToContentScript(tabID, Messages.SS_DIALOG_CANCEL, { message: 'Screen Capture Was Declined By User' });
+      console.log('user declined');
+      return { 
+        message:  'Screen Capture Was Accepted By User'
+      };
     }
   });
-
-  return { 
-    message: response
-  };
 }
 
 /**
@@ -84,6 +84,23 @@ const listenForMessages = ():void => {
     return requests.get(type)(sender, data);
   });
 }
+
+/**
+ * 
+ * @returns 
+ */
+const getCurrentTab = async() => {
+  const querryOptions = {
+    active: true,
+    lastFocusedWindow: true,
+    currentWindow: true
+  };
+
+  const [tab] = await chrome.tabs.query(querryOptions); 
+  
+  return tab;
+}
+
 
 /**
  * 
