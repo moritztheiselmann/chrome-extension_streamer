@@ -1,21 +1,16 @@
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue';
+  import { ref, computed, onMounted, onUnmounted } from 'vue';
   
   import { Messages } from './messages';
   import { sendMessageToBackground, sendMessageToContentScript } from './messenger';
   
-
-  const capturing = ref(<boolean>false);
+  // const isCapturing = ref(<boolean>false);
   const startCapturing = async():Promise<void> => {
     try {
-      const response = await sendMessageToBackground(
-        Messages.SS_UI_REQUEST,
-        {
-          message: 'Initialise Screen Capture'
-        }
-      );
+      const data =  { message: 'Initialise Screen Capture' };
+      const response = await sendMessageToBackground(Messages.SS_UI_REQUEST, data);
       console.log(`response: ${response}`);
-      capturing.value = true;
+      setActive(true);
     }
     catch (err) {
       console.error(`error: ${err}`);
@@ -24,45 +19,45 @@
   
   const stopCapturing = async():Promise<void> => {
     try {
-        const response = await sendMessageToBackground(
-          Messages.SS_UI_CANCEL,
-          {
-            message: 'Stop Screen Capture'
-          }
-        );
-        alert(`response: ${response}`);
-        capturing.value = false;
+      const data =  { message: 'Stop Screen Capture' };
+      const response = await sendMessageToBackground(Messages.SS_UI_CANCEL, data);
+      console.log(`response: ${response}`);
+      setActive(false);
     }
     catch (err) {
       console.error(`error: ${err}`);
     }
   }
-
-  const getCurrentTab = async() => {
-    const querryOptions = {
-      active: true,
-      lastFocusedWindow: true,
-      currentWindow: true
-    };
-
-    const [tab] = await chrome.tabs.query(querryOptions); 
-    
-    return tab;
-  }
-
-  // // listen to messages from content-script
-  // const capturing = ref(<boolean>false);
-  // document.addEventListener('DOMContentLoaded', () => {
-  //   window.addEventListener('message', (event) => {
-  //     alert(`test`);
-  //   });
+  
+  // const icons = ref({
+  //   active: '',
+  //   inactive: ''
   // });
+  const active = ref(<boolean>false);
+  const setActive = (value : boolean ) => {
+    active.value = value;
+    chrome.storage.sync.set({
+      toggleCapturing: active
+    }, () => {});
+
+    // chrome.browserAction.setIcon({
+    //   path: icons.value[active.value ? 'active' : 'inactive']
+    // });
+  }
+  
+  onMounted(() => {
+      chrome.storage.sync.get(['toggleCapturing'], (result) => {
+        active.value = result.toggleCapturing;
+      })
+  });
+
+
 </script>
 
 <template>
   <div>
     <button 
-      v-if="!capturing" 
+      v-if="!active" 
       @click="startCapturing">
       Start Capturing
     </button>
@@ -72,7 +67,7 @@
       Stop Capturing
     </button>
     <p>
-      Capturing: {{ capturing }}
+      Capturing: {{ active }}
     </p>
   </div>
 </template>

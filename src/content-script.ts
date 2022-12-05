@@ -26,15 +26,15 @@ const requestCapturing = async (sender: chrome.runtime.MessageSender, data: Mess
   }
 }
 
-const cancelCapturing = (sender, data):void => {
+const cancelCapturing = (sender: chrome.runtime.MessageSender, data: Message<any>)  => {
   console.log(`received from popup: ${data}`);
 }
 
-const dialogSuccess = (sender, data):void => {
+const dialogSuccess = (sender: chrome.runtime.MessageSender, data: Message<any>)  => {
   console.log(`received from background: ${data}`);
 }
 
-const dialogCancel = (sender, data):void => {
+const dialogCancel = (sender: chrome.runtime.MessageSender, data: Message<any>)  => {
   console.log(`received from background: ${data}`);
 }
 

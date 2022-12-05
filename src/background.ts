@@ -2,11 +2,35 @@ import { sendMessageToContentScript } from './messenger';
 import { Messages } from './messages';
 import { Message, MessageListener } from './types';
 
+
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.sync.set({
+    toggleCapturing: false,
+  }, () => {});
+});
+
+let toggleCapturing = false;
+chrome.storage.sync.get([
+  'toggleCapturing'
+], (result) => {
+  toggleCapturing = result.toggleCapturing;
+});
+
+chrome.storage.onChanged.addListener((changes, namespace) => {
+  if (namespace === 'sync') {
+    if (changes.toggleCapturing) {
+      toggleCapturing = changes.toggleCapturing.newValue;
+    }
+  }
+});
+
 const requests = new Map<Messages, MessageListener>();
 
 const registerMessengerRequests = ():void => {
   requests.set(Messages.SS_UI_REQUEST, requestScreenCapture);
   requests.set(Messages.SS_UI_CANCEL, cancelScreenCapture);
+  requests.set(Messages.SS_IS_CAPTURING, isCapturing);
 }
 
 const dataSources = <string[]>['screen', 'window', 'tab'];
@@ -39,12 +63,14 @@ const requestScreenCapture = async (sender: chrome.runtime.MessageSender, data: 
   mediaRequestID = chrome.desktopCapture.chooseDesktopMedia(dataSources, tab, (streamID) => {
     if (streamID) {
       console.log('user agreed');
+      capturing = true;
       return { 
         message:  'Screen Capture Was Declined By User'
       };
     }
     else {
       console.log('user declined');
+      capturing = false;
       return { 
         message:  'Screen Capture Was Accepted By User'
       };
@@ -58,20 +84,42 @@ const requestScreenCapture = async (sender: chrome.runtime.MessageSender, data: 
  * @param data 
  * @returns 
  */
-const cancelScreenCapture = (sender: chrome.runtime.MessageSender, data: Message<any>):void => { 
+const cancelScreenCapture = (sender: chrome.runtime.MessageSender, data: Message<any>) => { 
   if (mediaRequestID < 0) {
     return;
   }
 
-  const tabID = sender?.tab?.id;
-  if (!tabID) {
+  if (!sender) {
     return;
   }
 
+  // const tabID = sender?.tab?.id;
+  // if (!tabID) {
+  //   return;
+  // }
+
   chrome.desktopCapture.cancelChooseDesktopMedia(mediaRequestID);
   mediaRequestID = -1;
+  capturing = false;
 
-  sendMessageToContentScript(tabID, Messages.SS_UI_CANCEL, { message: 'Screen Capture Was Stopped' });
+  // sendMessageToContentScript(tabID, Messages.SS_UI_CANCEL, { message: 'Screen Capture Was Stopped' });
+  
+  return { 
+    message:  'Screen Capture Was Stopped'
+  };
+}
+
+let capturing = <boolean>false;
+const isCapturing = (sender: chrome.runtime.MessageSender, data: Message<any>) => {
+  if (!sender) {
+    return;
+  }
+
+  console.log(capturing);
+
+  return {
+    message: capturing
+  };
 }
 
 /**

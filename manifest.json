@@ -10,7 +10,8 @@
     "tabs",
     "activeTab",
     "scripting",
-    "desktopCapture"
+    "desktopCapture",
+    "storage"
   ],
   "background": {
     "service_worker": "src/background.ts"

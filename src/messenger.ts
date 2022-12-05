@@ -1,6 +1,9 @@
-export const sendMessageToBackground = async (type: any, data: any = null) => {
+import { Messages } from './messages';
+
+export const sendMessageToBackground = async (type: Messages, data: any = null) => {
   try {
     const response = await chrome.runtime.sendMessage({ type, data });
+    console.log(`response: ${response}`);
     return response; 
   }
   catch(err) {
@@ -9,7 +12,7 @@ export const sendMessageToBackground = async (type: any, data: any = null) => {
   }
 }
 
-export const sendMessageToContentScript = async (tabID: number, type: any, data: any = null) => {
+export const sendMessageToContentScript = async (tabID: number, type: Messages, data: any = null) => {
   try {
     const response = await chrome.tabs.sendMessage(tabID, { type, data });
     console.log(`response: ${response}`);
