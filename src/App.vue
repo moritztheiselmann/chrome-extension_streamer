@@ -4,23 +4,17 @@
   import { Messages } from './messages';
   import { sendMessageToBackground, sendMessageToContentScript } from './messenger';
   
-  const startCapturing = async():Promise<void> => {
+  const startCapturing = async() => {
     try {
       const response = await sendMessageToBackground(Messages.SS_UI_REQUEST, { message: 'Initialise Screen Capture' });
       console.log(`response: ${response}`);
-      // if (response === 'accepted') {
-      //   setActive(true);
-      // }
-      // else if (response === 'declined') {
-      //   setActive(false);
-      // }
     }
     catch (err) {
       console.error(`error: ${err}`);
     }
   }
   
-  const stopCapturing = async():Promise<void> => {
+  const stopCapturing = async() => {
     try {
       const response = await sendMessageToBackground(Messages.SS_UI_CANCEL, { message: 'Stop Screen Capture' });
       console.log(`response: ${response}`);
@@ -63,10 +57,17 @@
     }
   });
 
-  // const toggleCapturing = () => {
-  //   setActive(!active.value);
-  // }
+  const getCurrentTab = async() => {
+    const querryOptions = {
+      active: true,
+      lastFocusedWindow: true,
+      currentWindow: true
+    };
 
+    const [tab] = await chrome.tabs.query(querryOptions); 
+    
+    return tab;
+  }
 </script>
 
 <template>
@@ -81,7 +82,6 @@
       @click="stopCapturing">
       Stop Capturing
     </button>
-    <!-- <button @click="toggleCapturing"></button> -->
     <p>
       Capturing: {{ active }}
     </p>
