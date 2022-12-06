@@ -4,7 +4,7 @@
   import { Messages } from './messages';
   import { sendMessageToBackground, sendMessageToContentScript } from './messenger';
   
-  const startCapturing = async() => {
+  const startScreenCapture = async() => {
     try {
       const response = await sendMessageToBackground(Messages.SS_UI_REQUEST, { message: 'Initialise Screen Capture' });
       console.log(`response: ${response}`);
@@ -14,6 +14,29 @@
     }
   }
   
+  const startTabCapture = async() => {
+    try {
+      const tab = await getCurrentTab();
+      const tabID = tab.id;
+      if (!tabID) {
+        return;
+      }
+      chrome.tabCapture.getMediaStreamId({consumerTabId: tabID}, (streamID) => {
+        const response = sendMessageToContentScript(tabID, Messages.SS_TAB_REQUEST, 
+          { 
+            message: 'Initialise Tab Capture',
+            streamID: streamID
+          }
+        );
+        console.log(`response: ${response}`);
+      });
+
+    }
+    catch (err) {
+      console.error(`error: ${err}`);
+    }
+  }
+
   const stopCapturing = async() => {
     try {
       const response = await sendMessageToBackground(Messages.SS_UI_CANCEL, { message: 'Stop Screen Capture' });
@@ -46,6 +69,8 @@
         console.log(`got data from local storage: ${result.toggleCapturing}`);
         active.value = result.toggleCapturing;
       })
+
+      startTabCapture();
   });
 
   chrome.storage.onChanged.addListener((changes, namespace) => {
@@ -72,7 +97,14 @@
 
 <template>
   <div>
-    <button 
+    <button @click="startScreenCapture">
+      Record Screen
+    </button>
+    
+    <button @click="startTabCapture">
+      Capture Tab
+    </button>
+    <!-- <button 
       v-if="!active" 
       @click="startCapturing">
       Start Capturing
@@ -81,7 +113,7 @@
       v-else
       @click="stopCapturing">
       Stop Capturing
-    </button>
+    </button> -->
     <p>
       Capturing: {{ active }}
     </p>

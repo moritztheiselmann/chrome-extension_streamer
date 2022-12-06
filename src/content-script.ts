@@ -20,12 +20,23 @@ const dialogSuccess = (sender: chrome.runtime.MessageSender, data: any, sendResp
   return true;
 }
 
+const requestTabCapture = (sender: chrome.runtime.MessageSender, data: any, sendResponse: any)  => {
+  if (!sender) {
+    throw new Error('Received message contains no sender');
+  }
+  
+  startScreenSteramFrom(data.streamID);
+  sendResponse(`received streamid: ${data.streamID}`);
+
+  return true;
+}
+
 const startScreenSteramFrom = async (streamID : string) => {
   const constraints = <MediaStreamConstraints>{
     audio: false,
     video: {
       mandatory: {
-        chromeMediaSource: 'desktop',
+        chromeMediaSource: 'tab',
         chromeMediaSourceId: streamID
       }
     }
@@ -41,10 +52,6 @@ const startScreenSteramFrom = async (streamID : string) => {
   catch(err) {
     console.error(err);
   }
-
-  // navigator.mediaDevices.getUserMedia(constraints)
-  // .then(handleStreamSuccess)
-  // .catch(handleStreamError);
 }
 
 
@@ -57,6 +64,7 @@ const dialogCancel = (sender: chrome.runtime.MessageSender, data: any, sendRespo
 const registerMessengerRequests = ():void => {
   requests.set(Messages.SS_DIALOG_SUCCESS, dialogSuccess);
   requests.set(Messages.SS_DIALOG_CANCEL, dialogCancel);
+  requests.set(Messages.SS_TAB_REQUEST, requestTabCapture);
 }
 
 const listenForMessages = () => {
@@ -78,33 +86,34 @@ const listenForMessages = () => {
 const overlayWrapper = document.createElement('div');
 overlayWrapper.className = 'video-capture-stream__overlay-wrapper';
 
-const overlay = document.createElement('video');
-overlay.className = 'video-capture-stream__overlay';
-overlayWrapper.appendChild(overlay);
-
 overlayWrapper.style.cssText = `
+  top: 0;
+  left: 0;
   position: fixed;
   width: 100vw;
   height: 100vh;
-  z-index: 99999;
+  z-index: 9999;
 
   display: flex;
   justify-content: center;
-  
   align-items: center;
+  
   pointer-events:none;
   touch-action: none;
-  background-color: blue !important;
 `;
+
+const overlay = document.createElement('video');
+overlay.className = 'video-capture-stream__overlay';
 
 overlay.style.cssText = `
   position: relative;
-  width: 500px;
-  height: 500px;
-  background-color: blue !important;
+  width: 50vw;
+  height: 50vh;
+  // background-color: blue !important;
 `;
 
-document.body.appendChild(overlay);
+overlayWrapper.appendChild(overlay);
+document.body.appendChild(overlayWrapper);
 
 const init = ():void => {
   registerMessengerRequests();

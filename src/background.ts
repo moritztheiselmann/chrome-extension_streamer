@@ -34,10 +34,12 @@ const requests = new Map<Messages, MessageListener>();
 
 const registerMessengerRequests = ():void => {
   requests.set(Messages.SS_UI_REQUEST, requestScreenCapture);
+  requests.set(Messages.SS_TAB_REQUEST, requestTabCapture);
   requests.set(Messages.SS_UI_CANCEL, cancelScreenCapture);
 }
 
-const dataSources = <string[]>['screen', 'window', 'tab'];
+// const dataSources = <string[]>['screen', 'window', 'tab'];
+const dataSources = <string[]>['tab'];
 let mediaRequestID = <number> -1;
 /**
  * 
@@ -75,12 +77,45 @@ const requestScreenCapture = async (sender: chrome.runtime.MessageSender, data: 
   }
   catch(err) {
     // console.error(`error getting current tab: ${err}`);
-    throw new Error(`Error getting ncurrent tab: ${err}`);
+    throw new Error(`Error getting current tab: ${err}`);
   }
 
   return true;
 }
 
+/**
+ * 
+ * @param sender 
+ * @param data 
+ * @param sendResponse 
+ */
+const requestTabCapture = async (sender: chrome.runtime.MessageSender, data: any, sendResponse: any) => {
+  if (!sender) {
+    throw new Error('Sender does not exist.');
+  }
+
+  try {
+    const tab = await getCurrentTab();
+
+    chrome.tabCapture.getMediaStreamId({consumerTabId: tab.id}, (streamID) => {
+      console.log('--------------------');
+      console.log(streamID);
+      console.log('--------------------');
+    });
+
+  }
+  catch(err) {
+    throw new Error(`Error getting current tab: ${err}`);
+  }
+
+  return true;
+}
+
+/**
+ * 
+ * @param tabID 
+ * @param streamID 
+ */
 const sendStreamIdToContentScript = async(tabID : number, streamID : string) => {
   try {
     if (tabID) {

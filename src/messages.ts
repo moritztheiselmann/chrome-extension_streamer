@@ -1,4 +1,5 @@
 export enum Messages {
+  SS_TAB_REQUEST,
   SS_UI_REQUEST,
   SS_UI_CANCEL,
   SS_DIALOG_SUCCESS,
