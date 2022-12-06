@@ -50,31 +50,49 @@ const requestScreenCapture = async (sender: chrome.runtime.MessageSender, data: 
     throw new Error('Sender does not exist.');
   }
 
-  let tab;
   try {
-    tab = await getCurrentTab();
+    const tab = await getCurrentTab();
+
+    console.log('Requesting Screen Capture. Waiting for User input.');
+
+    mediaRequestID = chrome.desktopCapture.chooseDesktopMedia(dataSources, tab, (streamID) => {
+      if (streamID) {
+        console.log('user accepted');
+        if (tab.id) {
+          sendStreamIdToContentScript(tab.id, streamID);
+        }
+   
+        sendResponse('accepted');
+        setToggleCapturing(true);
+      }
+      else {
+        console.log('user declined');
+        sendResponse('decliend');
+        setToggleCapturing(false);
+      }
+    });
+
   }
   catch(err) {
     // console.error(`error getting current tab: ${err}`);
     throw new Error(`Error getting ncurrent tab: ${err}`);
   }
 
-  console.log('Requesting Screen Capture. Waiting for User input.');
-
-  mediaRequestID = chrome.desktopCapture.chooseDesktopMedia(dataSources, tab, (streamID) => {
-    if (streamID) {
-      console.log('user accepted');
-      sendResponse('accepted');
-      setToggleCapturing(true);
-    }
-    else {
-      console.log('user declined');
-      sendResponse('decliend');
-      setToggleCapturing(false);
-    }
-  });
-
   return true;
+}
+
+const sendStreamIdToContentScript = async(tabID : number, streamID : string) => {
+  try {
+    if (tabID) {
+      const response = await sendMessageToContentScript(tabID, Messages.SS_DIALOG_SUCCESS, { 
+        message: 'Stream ID',
+        streamID: streamID 
+      });
+    }  
+  }
+  catch(err) {
+    console.error(`Could not send message to content-script at TabID: ${tabID}`);
+  }
 }
 
 /**
@@ -101,9 +119,6 @@ const cancelScreenCapture = (sender: chrome.runtime.MessageSender, data: any, se
   sendResponse('Screen Capture Has Stopped');
 
   return true;
-  // return { 
-  //   data:  'Screen Capture Was Stopped'
-  // };
 }
 
 /**
@@ -113,14 +128,12 @@ const listenForMessages = () => {
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (!message) {
       throw new Error('No message appended.');
-      // return;
     }
     
     const { type, data } = message;
     const request = requests.get(type);
     if (!request) {
-      throw new Error('Rquest does not exist.');
-      // return;
+      throw new Error('Request does not exist.');
     }
 
     return request(sender, data, sendResponse);

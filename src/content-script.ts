@@ -4,89 +4,55 @@ import { Message, MessageListener } from './types';
 
 const requests = new Map<Messages, MessageListener>();
 
-// const requestCapturing = async (sender: chrome.runtime.MessageSender, message: Message<any>)  => {
-//   let response = undefined;
-//   try {
-//     response = await sendMessageToBackground(
-//       Messages.SS_UI_REQUEST,
-//       {
-//         data: 'Initialise Screen Capture'
-//       }
-//     );
+const streamID = <string>'';
 
-//     console.log(`response: ${response}`);
-//   }
-//   catch(err) {
-//     console.error(`error: ${err}`);
-//   }
+const dialogSuccess = (sender: chrome.runtime.MessageSender, message: Message<any>, sendResponse: any)  => {
+  if (!sender) {
+    throw new Error('Received message contains no sender');
+  }
+  
+  if (!message) {
+    throw new Error('Received message contains no message.');
+  }
+  
+  streamID = message.streamID;
 
-//   return {
-//     data: response
-//   }
-// }
+  sendResponse(`received streamid: ${message.streamID}`);
 
-// const cancelCapturing = (sender: chrome.runtime.MessageSender, message: Message<any>)  => {
-// }
+  return true;
+}
 
-// const dialogSuccess = (sender: chrome.runtime.MessageSender, message: Message<any>)  => {
-// }
+const dialogCancel = (sender: chrome.runtime.MessageSender, message: Message<any>, sendResponse: any)  => {
+  sendResponse(`received message: ${message.data}`);
 
-// const dialogCancel = (sender: chrome.runtime.MessageSender, message: Message<any>)  => {
-// }
+  return true;
+}
 
-// const registerMessengerRequests = ():void => {
-//   requests.set(Messages.SS_UI_REQUEST, requestCapturing);
-//   requests.set(Messages.SS_UI_CANCEL, cancelCapturing);
-//   requests.set(Messages.SS_DIALOG_SUCCESS, dialogSuccess);
-//   requests.set(Messages.SS_DIALOG_CANCEL, dialogCancel);
-// }
+const registerMessengerRequests = ():void => {
+  requests.set(Messages.SS_DIALOG_SUCCESS, dialogSuccess);
+  requests.set(Messages.SS_DIALOG_CANCEL, dialogCancel);
+}
 
-// const listenForMessages = () => {
-//   chrome.runtime.onMessage.addListener((message, sender) => {
-//     const { type, data } = message;
-//     return requests.get(type)(sender, data);
-//   });
-// }
+const listenForMessages = () => {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (!message) {
+      throw new Error('No message appended.');
+    }
+    
+    const { type, data } = message;
+    const request = requests.get(type);
+    if (!request) {
+      throw new Error('Request does not exist.');
+    }
+
+    return request(sender, data, sendResponse);
+  });
+}
 
 const init = ():void => {
-  // registerMessengerRequests();
+  registerMessengerRequests();
 
-  // listenForMessages();
+  listenForMessages();
 }
 
 init();
-
-
-// const port = chrome.runtime.connect(chrome.runtime.id);
-
-// // listen to messages from background
-// port.onMessage.addListener((message) => {
-//   if (!message) {
-//     return;
-//   }
-
-//   if (message.type === Messages.SS_DIALOG_SUCCESS || message.tpye === Messages.SS_DIALOG_CANCEL) {
-//     window.postMessage(message, '*');
-//   }
-// });
-
-// // listen to messages from pop-up
-// // acts as middlemen between popup and background
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//   if (!message) {
-//     return;
-//   }
-
-//   if (message.type === Messages.SS_UI_REQUEST || message.type === Messages.SS_UI_CANCEL) {
-//     if (!port) {
-//       return;
-//     }
-//     port.postMessage(message);
-//   }
-
-//   sendResponse(`Received message ${message.type}`);
-
-//   return true;
-// });
-
-// export {};
