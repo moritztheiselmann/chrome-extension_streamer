@@ -4,26 +4,25 @@ import { Message, MessageListener } from './types';
 
 const requests = new Map<Messages, MessageListener>();
 
-const streamID = <string>'';
-
-const dialogSuccess = (sender: chrome.runtime.MessageSender, message: Message<any>, sendResponse: any)  => {
+let streamID = <string>'';
+const dialogSuccess = (sender: chrome.runtime.MessageSender, data: any, sendResponse: any)  => {
   if (!sender) {
     throw new Error('Received message contains no sender');
   }
   
-  if (!message) {
-    throw new Error('Received message contains no message.');
+  if (!data) {
+    throw new Error('Received message contains no data.');
   }
   
-  streamID = message.streamID;
+  streamID = data.streamID;
 
-  sendResponse(`received streamid: ${message.streamID}`);
+  sendResponse(`received streamid: ${data.streamID}`);
 
   return true;
 }
 
-const dialogCancel = (sender: chrome.runtime.MessageSender, message: Message<any>, sendResponse: any)  => {
-  sendResponse(`received message: ${message.data}`);
+const dialogCancel = (sender: chrome.runtime.MessageSender, data: any, sendResponse: any)  => {
+  sendResponse(`received message: ${data.data}`);
 
   return true;
 }
