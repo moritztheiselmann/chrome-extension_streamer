@@ -7,5 +7,6 @@ export type Message<T> = {
 
 export type MessageListener = (
   sender: chrome.runtime.MessageSender,
-  data: Message<any>
+  message: Message<any>,
+  sendResponse: any
 ) => any;

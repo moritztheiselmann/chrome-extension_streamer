@@ -4,58 +4,54 @@ import { Message, MessageListener } from './types';
 
 const requests = new Map<Messages, MessageListener>();
 
-const requestCapturing = async (sender: chrome.runtime.MessageSender, data: Message<any>)  => {
-  console.log(`received from popup: ${data}`);
-  let response = undefined;
-  try {
-    response = await sendMessageToBackground(
-      Messages.SS_UI_REQUEST,
-      {
-        message: 'Initialise Screen Capture'
-      }
-    );
+// const requestCapturing = async (sender: chrome.runtime.MessageSender, message: Message<any>)  => {
+//   let response = undefined;
+//   try {
+//     response = await sendMessageToBackground(
+//       Messages.SS_UI_REQUEST,
+//       {
+//         data: 'Initialise Screen Capture'
+//       }
+//     );
 
-    console.log(`response: ${response}`);
-  }
-  catch(err) {
-    console.error(`error: ${err}`);
-  }
+//     console.log(`response: ${response}`);
+//   }
+//   catch(err) {
+//     console.error(`error: ${err}`);
+//   }
 
-  return {
-    message: response
-  }
-}
+//   return {
+//     data: response
+//   }
+// }
 
-const cancelCapturing = (sender: chrome.runtime.MessageSender, data: Message<any>)  => {
-  console.log(`received from popup: ${data}`);
-}
+// const cancelCapturing = (sender: chrome.runtime.MessageSender, message: Message<any>)  => {
+// }
 
-const dialogSuccess = (sender: chrome.runtime.MessageSender, data: Message<any>)  => {
-  console.log(`received from background: ${data}`);
-}
+// const dialogSuccess = (sender: chrome.runtime.MessageSender, message: Message<any>)  => {
+// }
 
-const dialogCancel = (sender: chrome.runtime.MessageSender, data: Message<any>)  => {
-  console.log(`received from background: ${data}`);
-}
+// const dialogCancel = (sender: chrome.runtime.MessageSender, message: Message<any>)  => {
+// }
 
-const registerMessengerRequests = ():void => {
-  requests.set(Messages.SS_UI_REQUEST, requestCapturing);
-  requests.set(Messages.SS_UI_CANCEL, cancelCapturing);
-  requests.set(Messages.SS_DIALOG_SUCCESS, dialogSuccess);
-  requests.set(Messages.SS_DIALOG_CANCEL, dialogCancel);
-}
+// const registerMessengerRequests = ():void => {
+//   requests.set(Messages.SS_UI_REQUEST, requestCapturing);
+//   requests.set(Messages.SS_UI_CANCEL, cancelCapturing);
+//   requests.set(Messages.SS_DIALOG_SUCCESS, dialogSuccess);
+//   requests.set(Messages.SS_DIALOG_CANCEL, dialogCancel);
+// }
 
-const listenForMessages = () => {
-  chrome.runtime.onMessage.addListener((message, sender) => {
-    const { type, data } = message;
-    return requests.get(type)(sender, data);
-  });
-}
+// const listenForMessages = () => {
+//   chrome.runtime.onMessage.addListener((message, sender) => {
+//     const { type, data } = message;
+//     return requests.get(type)(sender, data);
+//   });
+// }
 
 const init = ():void => {
-  registerMessengerRequests();
+  // registerMessengerRequests();
 
-  listenForMessages();
+  // listenForMessages();
 }
 
 init();
